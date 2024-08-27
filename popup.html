@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LinkedIn to VCF</title>
+    <style>
+      body {
+        width: 400px; /* Adjusted width for better fit in popup */
+        height: 250px; /* Adjusted height to fit the title */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        background-color: #262626;
+        color: white;
+      }
+      h1 {
+        font-size: 24px; /* Title font size */
+        margin: 0 0 30px 0;
+        text-align: center;
+        color: #42b4a7;
+      }
+      #status {
+        margin-bottom: 40px;
+        font-size: 14px;
+        text-align: center;
+      }
+      button {
+        width: 80%; /* Adjusted width for a more balanced look */
+        padding: 15px;
+        background-color: #42b4a7;
+        color: #262626;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 18px; /* Slightly larger font size */
+        transition: background-color 0.3s, transform 0.2s, color 0.3s,
+          border 0.3s;
+        text-align: center;
+      }
+      button:hover {
+        background-color: #262626; /* Darker shade for hover */
+        color: #42b4a7;
+        border: 2px solid #42b4a7; /* Add border on hover */
+      }
+    </style>
+  </head>
+  <body>
+    <h1>LinkedIn to VCF</h1>
+    <div id="status">Ready to download your VCF</div>
+    <button id="logName">Download VCF</button>
+    <script src="popup.js"></script>
+  </body>
+</html>
