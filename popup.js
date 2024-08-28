@@ -102,12 +102,12 @@ function createVcf(
     Array.isArray(experience[0])
   ) {
     let firstExperience = experience[0];
-    org = firstExperience[0] || "";
+    title = firstExperience[0] || "";
 
     if (firstExperience[1] && isNaN(firstExperience[1].charAt(0))) {
-      title = firstExperience[1];
+      org = firstExperience[1];
     } else {
-      title = firstExperience[2] || "";
+      org = firstExperience[2] || "";
     }
 
     const char = String.fromCodePoint(183);
@@ -125,7 +125,7 @@ function createVcf(
     vcfContent += `TITLE:${title}\n`;
   }
 
-  let noteContent = " -------- ABOUT: -------- \n" + (description || "");
+  let noteContent = " -------- ABOUT -------- \n" + (description || "");
 
   /**
    * Formats a list of items into a string suitable for VCF NOTE fields.
@@ -144,17 +144,16 @@ function createVcf(
       .join("\n\n");
   }
 
-  // Append experience, education, and licenses to the note content if they exist.
   if (experience || education || licenses) {
     noteContent +=
       "\n\n" +
-      " -------- EXPERIENCE: -------- \n" +
+      " -------- EXPERIENCE -------- \n" +
       formatList(experience) +
       "\n\n" +
-      " -------- EDUCATION: -------- \n" +
+      " -------- EDUCATION -------- \n" +
       formatList(education) +
       "\n\n" +
-      " -------- LICENSES & CERTIFICATION: -------- \n" +
+      " -------- LICENSES & CERTIFICATION -------- \n" +
       formatList(licenses);
   }
 
