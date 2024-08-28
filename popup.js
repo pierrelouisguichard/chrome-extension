@@ -111,10 +111,10 @@ function createVcf(
     }
 
     const char = String.fromCodePoint(183);
-    const index = title.indexOf(char) - 1;
+    const index = org.indexOf(char) - 1;
 
     if (index > -1) {
-      title = title.substring(0, index).trim();
+      org = org.substring(0, index).trim();
     }
   }
 
