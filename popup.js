@@ -66,6 +66,31 @@ document.getElementById("logName").addEventListener("click", () => {
   });
 });
 
+function splitFullName(fullName) {
+  // Trim any extra spaces from the full name
+  fullName = fullName.trim();
+
+  // Split the full name by spaces
+  const nameParts = fullName.split(" ");
+
+  // Handle different cases based on the number of parts in the name
+  const result = {
+    firstName: "",
+    lastName: "",
+  };
+
+  if (nameParts.length === 1) {
+    // If there's only one part, it's considered the first name
+    result.firstName = nameParts[0];
+  } else if (nameParts.length > 1) {
+    // If there are two or more parts, use the first and last parts as first name and last name
+    result.firstName = nameParts[0];
+    result.lastName = nameParts[nameParts.length - 1];
+  }
+
+  return result;
+}
+
 /**
  * Creates a VCF (vCard) content string from the provided profile data.
  * @param {string} name - The name of the person.
@@ -88,9 +113,13 @@ function createVcf(
 
   vcfContent += `FN:${name}\n`;
 
+  const arrFullName = splitFullName(name);
+
   if (profilePicUrl) {
     vcfContent += `PHOTO;VALUE=URI:${profilePicUrl}\n`;
   }
+
+  vcfContent += `N:${arrFullName.lastName};${arrFullName.firstName};;;\n`;
 
   let org = "";
   let title = "";
