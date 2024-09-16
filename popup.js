@@ -32,6 +32,7 @@ document.getElementById("logName").addEventListener("click", () => {
           try {
             // Create VCF content from the response data.
             const vcfContent = createVcf(
+              tabs[0],
               response.name.trim(),
               response.profilePicUrl,
               response.description,
@@ -93,6 +94,7 @@ function splitFullName(fullName) {
 
 /**
  * Creates a VCF (vCard) content string from the provided profile data.
+ * @param {string} tab - LinkedIn Page tab name.
  * @param {string} name - The name of the person.
  * @param {string} profilePicUrl - The URL of the profile picture.
  * @param {string} description - A description or note about the person.
@@ -102,6 +104,7 @@ function splitFullName(fullName) {
  * @returns {string} The generated VCF content.
  */
 function createVcf(
+  tab,
   name,
   profilePicUrl,
   description,
@@ -109,6 +112,8 @@ function createVcf(
   education,
   licenses
 ) {
+  const tabUrl = tab.url || "";
+
   let vcfContent = `BEGIN:VCARD\nVERSION:3.0\n`;
 
   vcfContent += `FN:${name}\n`;
@@ -190,6 +195,8 @@ function createVcf(
     noteContent = noteContent.replace(/\n/g, "\\n");
     vcfContent += `NOTE:${noteContent}\n`;
   }
+
+  vcfContent += `URL:${tabUrl}\n`;
 
   vcfContent += `END:VCARD`;
 
