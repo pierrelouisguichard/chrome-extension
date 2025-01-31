@@ -37,8 +37,7 @@ document.getElementById("logName").addEventListener("click", () => {
               response.profilePicUrl,
               response.description,
               response.experienceDetails,
-              response.educationDetails,
-              response.licensesAndCertificationsDetails
+              response.educationDetails
             );
 
             // Create a Blob from the VCF content and generate a download link.
@@ -60,6 +59,10 @@ document.getElementById("logName").addEventListener("click", () => {
             status.innerText = `Error generating VCF: ${error.message}`;
           }
         } else {
+          console.log("------------ERROR--------------");
+          console.log(response);
+          console.log(response.name);
+          console.log("------------END--------------");
           status.innerText = "Name or Profile Picture not found!";
         }
       }
@@ -100,7 +103,6 @@ function splitFullName(fullName) {
  * @param {string} description - A description or note about the person.
  * @param {Array<Array<string>>} experience - List of experiences.
  * @param {Array<Array<string>>} education - List of educational qualifications.
- * @param {Array<Array<string>>} licenses - List of licenses and certifications.
  * @returns {string} The generated VCF content.
  */
 function createVcf(
@@ -109,8 +111,7 @@ function createVcf(
   profilePicUrl,
   description,
   experience,
-  education,
-  licenses
+  education
 ) {
   const tabUrl = tab.url || "";
 
@@ -178,17 +179,14 @@ function createVcf(
       .join("\n\n");
   }
 
-  if (experience || education || licenses) {
+  if (experience || education) {
     noteContent +=
       "\n\n" +
       " -------- EXPERIENCE -------- \n" +
       formatList(experience) +
       "\n\n" +
       " -------- EDUCATION -------- \n" +
-      formatList(education) +
-      "\n\n" +
-      " -------- LICENSES & CERTIFICATION -------- \n" +
-      formatList(licenses);
+      formatList(education);
   }
 
   if (noteContent) {

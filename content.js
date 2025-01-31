@@ -3,7 +3,7 @@
  * @returns {Array<string>} An array of text content from the experience section.
  */
 function processExperienceSection() {
-  return processSection("div#experience", "experience");
+  return processSection("div#experience.pv-profile-card__anchor", "experience");
 }
 
 /**
@@ -11,18 +11,7 @@ function processExperienceSection() {
  * @returns {Array<string>} An array of text content from the education section.
  */
 function processEducationSection() {
-  return processSection("div#education", "education");
-}
-
-/**
- * Processes the licenses and certifications section of the profile.
- * @returns {Array<string>} An array of text content from the licenses and certifications section.
- */
-function processLicensesAndCertificationsSection() {
-  return processSection(
-    "div#licenses_and_certifications",
-    "licenses_and_certifications"
-  );
+  return processSection("div#education.pv-profile-card__anchor", "education");
 }
 
 /**
@@ -45,6 +34,7 @@ function processSection(divSelector, sectionName) {
   }
 
   const listItems = parentSection.querySelectorAll("li.artdeco-list__item");
+
   const itemsToProcess = Array.from(listItems).slice(0, 4); // Limit to first 4 items
   const results = [];
 
@@ -107,22 +97,30 @@ function extractTextFromListItem(listItem) {
  * @returns {Object} An object containing the profile details.
  */
 function getProfileDetails() {
-  const nameElement = document.querySelector(".text-heading-xlarge");
-  const profilePicElement = document.querySelector(
-    ".pv-top-card-profile-picture__image--show"
+  const nameElement = document.querySelector(
+    "h1.inline.t-24.v-align-middle.break-words"
   );
+
+  const profilePicElement = document.querySelector(
+    "img.pv-top-card-profile-picture__image--show"
+  );
+
   const descriptionElement = document.querySelector(
-    "div.text-body-medium.break-words"
+    "div.inline-show-more-text--is-collapsed"
   );
   const experienceDetails = processExperienceSection();
   const educationDetails = processEducationSection();
-  const licensesAndCertificationsDetails =
-    processLicensesAndCertificationsSection();
-
   const name = nameElement ? nameElement.textContent.trim() : null;
   const profilePicUrl = profilePicElement ? profilePicElement.src : null;
   const description = descriptionElement
-    ? descriptionElement.textContent.trim()
+    ? Array.from(descriptionElement.childNodes) // Get all child nodes
+        .filter(
+          (node) =>
+            node.nodeType === Node.TEXT_NODE || // Include text nodes
+            (node.tagName === "SPAN" && !node.hasAttribute("aria-hidden")) // Include visible <span>
+        )
+        .map((node) => node.textContent.trim()) // Clean up text
+        .join(" ") // Join into one string
     : null;
 
   return {
@@ -130,7 +128,6 @@ function getProfileDetails() {
     profilePicUrl,
     experienceDetails,
     educationDetails,
-    licensesAndCertificationsDetails,
     description,
   };
 }
