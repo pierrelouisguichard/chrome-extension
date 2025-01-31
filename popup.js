@@ -1,13 +1,12 @@
-document.getElementById("logName").addEventListener("click", () => {
+document.getElementById("logName").addEventListener("click", async () => {
   const status = document.getElementById("status");
 
   // Clear previous status message
   status.innerText = "";
 
   // Query the active tab in the current window.
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     if (chrome.runtime.lastError) {
-      // Handle errors from chrome.tabs.query
       status.innerText = `Error querying tabs: ${chrome.runtime.lastError.message}`;
       return;
     }
@@ -21,17 +20,19 @@ document.getElementById("logName").addEventListener("click", () => {
     chrome.tabs.sendMessage(
       tabs[0].id,
       { action: "getProfileDetails" },
-      (response) => {
+      async (response) => {
+        // Make this function async
         if (chrome.runtime.lastError) {
-          // Handle errors from chrome.tabs.sendMessage
           status.innerText = `Error sending message: ${chrome.runtime.lastError.message}`;
           return;
         }
 
         if (response && response.name) {
           try {
-            // Create VCF content from the response data.
-            const vcfContent = createVcf(
+            console.log("Received response:", response); // Debugging log
+
+            // Await the VCF content
+            const vcfContent = await createVcf(
               tabs[0],
               response.name.trim(),
               response.profilePicUrl,
@@ -39,6 +40,8 @@ document.getElementById("logName").addEventListener("click", () => {
               response.experienceDetails,
               response.educationDetails
             );
+
+            console.log("Generated VCF content:", vcfContent); // Debugging log
 
             // Create a Blob from the VCF content and generate a download link.
             const blob = new Blob([vcfContent], { type: "text/vcard" });
@@ -49,19 +52,18 @@ document.getElementById("logName").addEventListener("click", () => {
             document.body.appendChild(a);
             a.click(); // Trigger the download.
 
-            // Clean up by removing the link and revoking the object URL.
+            // Clean up
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
             status.innerText = `Downloaded: ${response.name}.vcf`;
           } catch (error) {
-            // Handle errors that occur during VCF content creation or download
             status.innerText = `Error generating VCF: ${error.message}`;
           }
         } else {
           console.log("------------ERROR--------------");
           console.log(response);
-          console.log(response.name);
+          console.log(response?.name);
           console.log("------------END--------------");
           status.innerText = "Name or Profile Picture not found!";
         }
@@ -95,17 +97,22 @@ function splitFullName(fullName) {
   return result;
 }
 
-/**
- * Creates a VCF (vCard) content string from the provided profile data.
- * @param {string} tab - LinkedIn Page tab name.
- * @param {string} name - The name of the person.
- * @param {string} profilePicUrl - The URL of the profile picture.
- * @param {string} description - A description or note about the person.
- * @param {Array<Array<string>>} experience - List of experiences.
- * @param {Array<Array<string>>} education - List of educational qualifications.
- * @returns {string} The generated VCF content.
- */
-function createVcf(
+async function getBase64Image(url) {
+  const response = await fetch(url);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => {
+      const base64data = reader.result.split(",")[1]; // Remove 'data:image/png;base64,'
+      resolve(base64data);
+    };
+    reader.onerror = reject;
+  });
+}
+
+async function createVcf(
   tab,
   name,
   profilePicUrl,
@@ -114,35 +121,38 @@ function createVcf(
   education
 ) {
   const tabUrl = tab.url || "";
-
   let vcfContent = `BEGIN:VCARD\nVERSION:3.0\n`;
 
   vcfContent += `FN:${name}\n`;
-
   const arrFullName = splitFullName(name);
-
-  if (profilePicUrl) {
-    vcfContent += `PHOTO;VALUE=URI:${profilePicUrl}\n`;
-  }
-
   vcfContent += `N:${arrFullName.lastName};${arrFullName.firstName};;;\n`;
 
-  let org = "";
-  let title = "";
+  // Convert the profile picture to Base64
+  if (profilePicUrl) {
+    try {
+      const base64Photo = await getBase64Image(profilePicUrl);
+      vcfContent += `PHOTO;ENCODING=b;TYPE=JPEG:${base64Photo}\n`;
+    } catch (error) {
+      console.error("Error fetching profile picture:", error);
+    }
+  }
 
-  // Extract the first experience item to set organization and title.
+  let org = "",
+    title = "";
+
   if (
     Array.isArray(experience) &&
     experience.length > 0 &&
     Array.isArray(experience[0])
   ) {
     let firstExperience = experience[0];
-    title = firstExperience[0] || "";
 
     if (firstExperience[1] && isNaN(firstExperience[1].charAt(0))) {
-      org = firstExperience[1];
+      org = firstExperience[1] || "";
+      title = firstExperience[0] || "";
     } else {
-      org = firstExperience[2] || "";
+      org = firstExperience[0] || "";
+      title = firstExperience[2] || "";
     }
 
     const char = String.fromCodePoint(183);
@@ -153,36 +163,19 @@ function createVcf(
     }
   }
 
-  if (org) {
-    vcfContent += `ORG:${org}\n`;
-  }
-  if (title) {
-    vcfContent += `TITLE:${title}\n`;
-  }
+  if (org) vcfContent += `ORG:${org}\n`;
+  if (title) vcfContent += `TITLE:${title}\n`;
 
   let noteContent = " -------- ABOUT -------- \n" + (description || "");
-
-  /**
-   * Formats a list of items into a string suitable for VCF NOTE fields.
-   * @param {Array<Array<string>>} list - List of lists containing text items.
-   * @returns {string} The formatted list as a string.
-   */
   function formatList(list) {
-    if (!Array.isArray(list) || !list.length || !Array.isArray(list[0])) {
+    if (!Array.isArray(list) || !list.length || !Array.isArray(list[0]))
       return "";
-    }
-
-    return list
-      .map((subList) => {
-        return subList.map((item) => `${item}`).join("\n");
-      })
-      .join("\n\n");
+    return list.map((subList) => subList.join("\n")).join("\n\n");
   }
 
   if (experience || education) {
     noteContent +=
-      "\n\n" +
-      " -------- EXPERIENCE -------- \n" +
+      "\n\n -------- EXPERIENCE -------- \n" +
       formatList(experience) +
       "\n\n" +
       " -------- EDUCATION -------- \n" +
@@ -190,13 +183,10 @@ function createVcf(
   }
 
   if (noteContent) {
-    noteContent = noteContent.replace(/\n/g, "\\n");
-    vcfContent += `NOTE:${noteContent}\n`;
+    vcfContent += `NOTE:${noteContent.replace(/\n/g, "\\n")}\n`;
   }
 
-  vcfContent += `URL:${tabUrl}\n`;
-
-  vcfContent += `END:VCARD`;
+  vcfContent += `URL:${tabUrl}\nEND:VCARD`;
 
   return vcfContent;
 }
